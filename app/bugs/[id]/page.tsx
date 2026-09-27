@@ -2,23 +2,85 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { bugReport } from '@/lib/bug';
+import type { ReproductionResult } from '@/lib/bug';
 
+// ─── tiny local styles only this page needs ───────────────────────────────────
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 10px',
+  border: '1px solid var(--border2)',
+  borderRadius: 7,
+  background: '#fff',
+  fontSize: 14,
+  color: 'var(--text)',
+  fontFamily: 'inherit',
+  outline: 'none',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 600,
+  color: 'var(--muted)',
+  marginBottom: 5,
+  textTransform: 'uppercase',
+  letterSpacing: '.06em',
+};
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+function fmt(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function BreakdownRow({ label, value, dim, fail, pass }: {
+  label: string;
+  value: string;
+  dim?: boolean;
+  fail?: boolean;
+  pass?: boolean;
+}) {
+  const color = fail ? 'var(--red)' : pass ? 'var(--green)' : dim ? 'var(--muted)' : 'var(--text)';
+  return (
+    <div className="metric">
+      <small>{label}</small>
+      <strong style={{ color, fontSize: 15 }}>{value}</strong>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function BugPage() {
-  const [variant, setVariant] = useState<'original' | 'repaired'>('original');
-  const [result, setResult]   = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [notebookQty, setNotebookQty] = useState('1');
+  const [penQty,      setPenQty]      = useState('1');
+  const [coupon,      setCoupon]      = useState('SAVE10');
+  const [variant,     setVariant]     = useState<'original' | 'repaired'>('original');
+  const [result,      setResult]      = useState<ReproductionResult | null>(null);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState<string | null>(null);
 
   async function run() {
     setLoading(true);
+    setError(null);
     setResult(null);
-    const r = await fetch('/api/reproductions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ variant }),
-    });
-    const j = await r.json();
-    setResult(j.data);
-    setLoading(false);
+    try {
+      const r = await fetch('/api/reproductions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          variant,
+          notebookQuantity: Number(notebookQty),
+          penQuantity:      Number(penQty),
+          coupon,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) { setError(j.error ?? 'Server error.'); return; }
+      setResult(j.data);
+    } catch {
+      setError('Network error — check the console.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   function download() {
@@ -41,6 +103,7 @@ export default function BugPage() {
           BugReplay
         </Link>
         <div className="nav-links">
+          <Link href="/bugs">Issues</Link>
           <Link href="/bugs/BUG-001/verification">Verification →</Link>
         </div>
       </nav>
@@ -104,78 +167,167 @@ export default function BugPage() {
           </div>
 
           {/* ── Right column ────────────────────────────────── */}
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Checkout input panel */}
             <div className="card">
-              <div className="eyebrow">Reproduce scenario</div>
+              <div className="eyebrow">Interactive checkout</div>
               <p style={{ marginTop: 8 }}>
-                Choose a labeled implementation variant. The calculation runs
-                server-side against the seeded fixture.
+                Adjust quantities and coupon, then run the calculation to see
+                the bug in action.
               </p>
 
-              <div className="actions" style={{ marginTop: 14 }}>
-                <button
-                  className={`btn${variant === 'original' ? ' primary' : ''}`}
-                  onClick={() => setVariant('original')}
-                >
-                  Original bug
-                </button>
-                <button
-                  className={`btn${variant === 'repaired' ? ' primary' : ''}`}
-                  onClick={() => setVariant('repaired')}
-                >
-                  Repaired code
-                </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+                <div>
+                  <label style={labelStyle} htmlFor="notebook-qty">
+                    Demo Notebook qty
+                  </label>
+                  <input
+                    id="notebook-qty"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={notebookQty}
+                    onChange={e => setNotebookQty(e.target.value)}
+                    style={inputStyle}
+                  />
+                  <div style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4 }}>
+                    $30.00 each
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle} htmlFor="pen-qty">
+                    Demo Pen Set qty
+                  </label>
+                  <input
+                    id="pen-qty"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={penQty}
+                    onChange={e => setPenQty(e.target.value)}
+                    style={inputStyle}
+                  />
+                  <div style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4 }}>
+                    $20.00 each
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <label style={labelStyle} htmlFor="coupon">
+                  Coupon code
+                </label>
+                <input
+                  id="coupon"
+                  type="text"
+                  placeholder="e.g. SAVE10 (or leave blank)"
+                  value={coupon}
+                  onChange={e => setCoupon(e.target.value)}
+                  style={inputStyle}
+                />
+                <div style={{ fontSize: 11, color: 'var(--dim)', marginTop: 4 }}>
+                  SAVE10 = 10% off · any other value = no discount
+                </div>
+              </div>
+
+              {/* Variant selector */}
+              <div style={{ marginTop: 14 }}>
+                <label style={labelStyle}>Code variant</label>
+                <div className="actions">
+                  <button
+                    className={`btn${variant === 'original' ? ' primary' : ''}`}
+                    onClick={() => setVariant('original')}
+                  >
+                    Original bug
+                  </button>
+                  <button
+                    className={`btn${variant === 'repaired' ? ' primary' : ''}`}
+                    onClick={() => setVariant('repaired')}
+                  >
+                    Repaired code
+                  </button>
+                </div>
               </div>
 
               <button
-                className="btn primary"
-                style={{ width: '100%', marginTop: 12 }}
+                className="btn amber"
+                style={{ width: '100%', marginTop: 14 }}
                 onClick={run}
                 disabled={loading}
               >
-                {loading ? 'Running…' : 'Run reproduction →'}
+                {loading ? 'Calculating…' : 'Calculate total →'}
               </button>
 
-              {result && (
-                <div className={`result ${result.matchesExpected ? 'pass' : 'fail'}`}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span className="eyebrow">Result</span>
-                    <span className={`badge ${result.matchesExpected ? 'pass' : 'fail'}`}>
-                      {result.matchesExpected ? '✓ Pass' : '✗ Fail'}
-                    </span>
-                  </div>
-                  <div className="metric">
-                    <small>Observed total</small>
-                    <strong
-                      style={{ color: result.matchesExpected ? 'var(--green)' : 'var(--red)' }}
-                    >
-                      ${(result.observedTotalCents / 100).toFixed(2)}
-                    </strong>
-                  </div>
-                  <div className="metric">
-                    <small>Expected total</small>
-                    <strong>${(result.expectedTotalCents / 100).toFixed(2)}</strong>
-                  </div>
-                  <div className="metric">
-                    <small>Variant</small>
-                    <span className="mono" style={{ fontSize: 12 }}>{result.variant}</span>
-                  </div>
-                  <div className="metric">
-                    <small>Run ID</small>
-                    <span className="mono" style={{ fontSize: 11, color: 'var(--dim)' }}>
-                      {result.runId?.slice(0, 16)}…
-                    </span>
-                  </div>
+              {error && (
+                <div className="alert error" style={{ marginTop: 12 }}>
+                  {error}
                 </div>
               )}
             </div>
-          </div>
 
+            {/* Result breakdown */}
+            {result && (
+              <div className={`card result ${result.matchesExpected ? 'pass' : 'fail'}`}
+                   style={{ border: `1px solid ${result.matchesExpected ? 'var(--green-bdr)' : 'var(--red-bdr)'}`,
+                            background: result.matchesExpected ? 'var(--green-bg)' : 'var(--red-bg)',
+                            padding: 20 }}>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <span className="eyebrow">Checkout breakdown</span>
+                  <span className={`badge ${result.matchesExpected ? 'pass' : 'fail'}`}>
+                    {result.matchesExpected ? '✓ Pass' : '✗ Bug reproduced'}
+                  </span>
+                </div>
+
+                <BreakdownRow
+                  label="Subtotal"
+                  value={fmt(result.subtotalCents)}
+                />
+                {result.discountCents > 0 && (
+                  <BreakdownRow
+                    label={`Discount (${result.cart.coupon.toUpperCase()})`}
+                    value={`−${fmt(result.discountCents)}`}
+                    dim
+                  />
+                )}
+                <BreakdownRow
+                  label="Actual total (observed)"
+                  value={fmt(result.observedTotalCents)}
+                  fail={!result.matchesExpected}
+                  pass={result.matchesExpected}
+                />
+                <BreakdownRow
+                  label="Expected total"
+                  value={fmt(result.expectedTotalCents)}
+                />
+
+                {!result.matchesExpected && (
+                  <div className="alert error" style={{ marginTop: 12, fontSize: 13 }}>
+                    Off by {fmt(Math.abs(result.expectedTotalCents - result.observedTotalCents))}
+                    {' — '}SAVE10 was applied twice.
+                  </div>
+                )}
+
+                <div className="metric" style={{ marginTop: 4 }}>
+                  <small>Variant</small>
+                  <span className="mono" style={{ fontSize: 12 }}>{result.variant}</span>
+                </div>
+                <div className="metric">
+                  <small>Run ID</small>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--dim)' }}>
+                    {result.runId?.slice(0, 16)}…
+                  </span>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
       </section>
 
       <footer className="footer">
-        <Link href="/">← Home</Link>
+        <Link href="/bugs">← Issues</Link>
         <span>BugReplay / IBM Bob 2.0</span>
       </footer>
 
