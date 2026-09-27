@@ -1,25 +1,66 @@
 # BugReplay
 
-BugReplay turns one synthetic checkout bug into a reproducible evidence trail and a verified repair. It is the IBM Bob 2.0 Hackathon prototype for Northstar Demo.
+BugReplay is an evidence-first debugging prototype built with IBM Bob 2.0.
 
-## Run locally
+It helps developers reproduce a checkout bug, compare the original and repaired implementation, and verify the fix with a regression test.
 
-```bash
-npm install
-npm run dev
-```
+## Problem
 
-Open `http://localhost:3000`, then use `/bugs/BUG-001` for the seeded scenario and `/bugs/BUG-001/verification` for the recorded comparison.
+A checkout bug applies the `SAVE10` coupon twice.  
+For a $50 cart:
 
-## Test
+- Expected total: $45
+- Buggy total: $40
+
+This makes bug reports difficult to reproduce and verify.
+
+## Solution
+
+BugReplay provides:
+
+- Interactive notebook and pen quantity inputs
+- Coupon code testing
+- Original bug and repaired code variants
+- Reproduction of the incorrect calculation
+- Before-and-after evidence
+- Automated regression tests
+- Verification page showing the confirmed fix
+
+## Demo Flow
+
+1. Open `/bugs/BUG-001`
+2. Enter quantities and coupon code `SAVE10`
+3. Select **Original bug**
+4. Click **Calculate total** and observe `$40`
+5. Select **Repaired code**
+6. Click **Calculate total** and observe `$45`
+7. Open the verification page to review the evidence
+
+## IBM Bob 2.0 Usage
+
+IBM Bob IDE was used to:
+
+- Inspect the existing project
+- Reproduce the seeded checkout defect
+- Implement the smallest repair
+- Add regression tests
+- Add interactive checkout inputs
+- Run tests and production build validation
+
+Bob task-session summary screenshots are included as hackathon evidence.
+
+## Technology Stack
+
+- Next.js
+- React
+- TypeScript
+- Vitest
+- IBM Bob IDE
+- Vercel
+
+## Testing
+
+Run the tests:
 
 ```bash
 npm test
-npm run build
-```
-
-The original implementation deliberately returns $40 for a $50 cart with SAVE10. The repaired implementation returns $45. The original behavior is a labeled fixture used to demonstrate the before/after workflow.
-
-## Bob IDE evidence
-
-Relevant Bob task session consumption screenshots belong in `bob_sessions/`. See `deliverables/BugReplay-Complete-Product-and-Technical-Spec.md` for the prompts, architecture, and submission checklist.
