@@ -1,0 +1,1 @@
+{"data":[{"id":"BUG-001","title":"SAVE10 is applied twice at checkout","severity":"High","description":"A seeded checkout defect subtracts the same discount twice when a two-item cart uses SAVE10.","steps":["Add Demo Notebook — $30.00","Add Demo Pen Set — $20.00","Enter coupon SAVE10","Submit the checkout calculation"],"expectedTotalCents":4500,"fixtureVersion":"northstar-v1"}]}

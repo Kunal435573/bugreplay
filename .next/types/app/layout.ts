@@ -1,4 +1,4 @@
-// File: C:\Users\LENOVO\OneDrive\Documents\BugReplay-project\app\layout.tsx
+// File: C:\BugReplay-project\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

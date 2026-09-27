@@ -1,3 +1,11 @@
 {
-  "/page": "app/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/bugs/[id]/route": "app/api/bugs/[id]/route.js",
+  "/api/bugs/route": "app/api/bugs/route.js",
+  "/api/bugs/[id]/verification/route": "app/api/bugs/[id]/verification/route.js",
+  "/api/reproductions/route": "app/api/reproductions/route.js",
+  "/bugs/[id]/page": "app/bugs/[id]/page.js",
+  "/bugs/[id]/verification/page": "app/bugs/[id]/verification/page.js",
+  "/page": "app/page.js",
+  "/bugs/page": "app/bugs/page.js"
 }
